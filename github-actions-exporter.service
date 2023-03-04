@@ -1,0 +1,16 @@
+[Unit]
+Description=GitHub Actions Exporter
+Wants=network-online.target
+After=network.target
+
+[Service]
+Type=simple
+User=github-actions
+Group=github-actions
+ExecStart=/usr/bin/python3 /usr/local/bin/github-actions-exporter.py --config-file=/etc/github-actions/github-actions.yml
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+
