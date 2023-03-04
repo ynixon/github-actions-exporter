@@ -8,6 +8,7 @@ fi
 # Define variables
 BIN_PATH="/usr/local/bin"
 ETC_PATH="/etc/github-actions"
+LOG_PATH="/var/log/github-actions"
 ORG=""
 TOKEN=""
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -31,6 +32,11 @@ if [ ! -d $ETC_PATH ]
 then
   mkdir -p $ETC_PATH
 fi
+if [ ! -d $LOG_PATH ]
+then
+  mkdir -p $LOG_PATH
+  touch $LOG_PATH/github-actions-exporter.log
+fi
 cp github-actions.yml $ETC_PATH
 sed -i "s/<ORG>/$ORG/g" $ETC_PATH/github-actions.yml
 sed -i "s/<TOKEN>/$TOKEN/g" $ETC_PATH/github-actions.yml
@@ -45,6 +51,7 @@ useradd -r -g github-actions -s /sbin/nologin github-actions
 # Change ownership of the files
 chown -R github-actions:github-actions $BIN_PATH/github-actions-exporter.py
 chown -R github-actions:github-actions $ETC_PATH/github-actions.yml
+chown -R github-actions:github-actions $LOG_PATH
 chown -R github-actions:github-actions /etc/systemd/system/github-actions-exporter.service
 
 # Reload systemctl daemon
