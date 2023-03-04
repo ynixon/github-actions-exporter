@@ -5,10 +5,12 @@ import time
 from datetime import datetime
 import argparse
 import yaml
+import logging
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config-file', help='Path to configuration file')
 args = parser.parse_args()
+logger = logging.getLogger(__name__)
 
 if args.config_file:
     with open(args.config_file, 'r') as f:
@@ -29,13 +31,24 @@ def get_repos(org: str, TOKEN: str):
     url = f"https://api.github.com/orgs/{org}/repos"
     headers = {'Authorization': f'token {TOKEN}'}
     r = requests.get(url, headers=headers)
+    if r.status_code == 401:
+        logger.error("Failed to authenticate with GitHub API - check your token")
+    if r.status_code != 200:
+        logger.error(f"Request failed with status code {r.status_code} and message: {r.text}")
+        return []
     data = r.json()
     return [repo['full_name'] for repo in data]
+
 
 def get_workflows(repo: str):
     url = f"https://api.github.com/repos/{repo}/actions/workflows"
     headers = {'Authorization': f'token {TOKEN}'}
     r = requests.get(url, headers=headers)
+    if r.status_code == 401:
+        logger.error("Failed to authenticate with GitHub API - check your token")
+    if r.status_code != 200:
+        logger.error(f"Request failed with status code {r.status_code} and message: {r.text}")
+        return []
     data = r.json()
     if 'workflows' in data:
         return [(workflow['id'], workflow['name']) for workflow in data['workflows']]
@@ -47,6 +60,11 @@ def get_workflow_runs(repo: str, workflow: str, TOKEN: str):
     url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?per_page=100"
     headers = {'Authorization': f'token {TOKEN}'}
     r = requests.get(url, headers=headers)
+    if r.status_code == 401:
+        logger.error("Failed to authenticate with GitHub API - check your token")
+    if r.status_code != 200:
+        logger.error(f"Request failed with status code {r.status_code} and message: {r.text}")
+        return []
     data = r.json()
     runs = data['workflow_runs']
     run_count = len(runs)
@@ -73,10 +91,15 @@ def update_metrics():
                 avg_duration = total_duration / run_count
                 gha_run_duration.labels(repo=repo, workflow=workflow_name).set(avg_duration)
 
+def start_http_server_with_error_handling(port):
+    try:
+        start_http_server(port)
+    except OSError as e:
+        logging.error(f'Could not start HTTP server on port {port}. {e}')
 
 if __name__ == '__main__':
     # Start up the server to expose the metrics.
-    start_http_server(PORT)
+    start_http_server_with_error_handling(PORT)
     
 while True:
         update_metrics()
