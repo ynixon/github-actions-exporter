@@ -23,7 +23,7 @@ if args.config_file:
 
 # Set up metrics
 gha_run_status = Gauge('github_actions_run_status', 'Status of GitHub Actions workflow run', [
-                       'repo', 'workflow', 'status', 'updated_at', 'duration'])
+                       'repo', 'workflow', 'status', 'updated_at', 'duration', 'user'])
 
 session = requests.Session()
 session.headers.update({'Authorization': f'token {TOKEN}'})
@@ -47,7 +47,7 @@ def get_workflows(repo: str):
         r.raise_for_status()
         data = r.json()
         if 'workflows' in data:
-            return [(workflow['id'], workflow['name']) for workflow in data['workflows']]
+            return [(workflow['id'], workflow['name']) for workflow in data['workflows'] if workflow['state'] != 'disabled']
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
         return []
@@ -61,7 +61,8 @@ def get_workflow_runs(repo: str, workflow_id: str, branch: str, TOKEN: str):
         runs = data['workflow_runs']
         # Sort runs in ascending order by updated_at
         sorted_runs = sorted(runs, key=lambda run: run['updated_at'], reverse=True)
-        return [{'id': run['id'], 'status': run['conclusion'], 'created_at': run['created_at'], 'updated_at': run['updated_at']} for run in sorted_runs]        
+        return [{'id': run['id'], 'status': run["conclusion"] if run["conclusion"] else "N/A", 'created_at': run['created_at'], 'updated_at': run['updated_at'], 'user': "scheduled" if run['event'] == 'schedule' else run['actor']['login']} for run in sorted_runs]
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
         return []
@@ -77,13 +78,14 @@ def update_metrics():
             if runs:
                 last_run = runs[0]
                 last_run_status = last_run['status']
+                user = last_run["user"]
                 created_at = datetime.strptime(
                     last_run['created_at'][:-1], '%Y-%m-%dT%H:%M:%S')
                 updated_at = datetime.strptime(
                     last_run['updated_at'][:-1], '%Y-%m-%dT%H:%M:%S')
                 duration = (updated_at - created_at).total_seconds()
                 gha_run_status.labels(repo=repo, workflow=workflow_name,
-                                      status=last_run_status, updated_at=updated_at, duration=duration).inc()
+                                      status=last_run_status, updated_at=updated_at, duration=duration, user=user).inc()
 
 def check_limits():
     headers = {'Authorization': f'token {TOKEN}'}
