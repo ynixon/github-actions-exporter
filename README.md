@@ -50,3 +50,12 @@ You can modify these parameters by editing the configuration file and restarting
 ```bash
 sudo systemctl restart github-actions-exporter
 ```
+
+## Dashboard
+The GitHub Actions Exporter comes with a pre-configured dashboard JSON file called Dashboard-GitHub-Actions-Workflows.json. This file can be imported into a Grafana instance to display the data collected by the exporter in a visual format. To import the dashboard, follow these steps:
+
+1. Open your Grafana instance and navigate to the Dashboards section.
+1. Click on the Import button and select Upload .json File.
+1. Select the Dashboard-GitHub-Actions-Workflows.json file and click on Import.
+
+Once imported, you can view and customize the dashboard to suit your needs.
