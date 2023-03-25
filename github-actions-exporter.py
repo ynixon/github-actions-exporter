@@ -8,6 +8,7 @@ import yaml
 import logging
 import sys
 import traceback
+from datetime import timedelta
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config-file', help='Path to configuration file')
@@ -47,7 +48,7 @@ def get_workflows(repo: str):
         r.raise_for_status()
         data = r.json()
         if 'workflows' in data:
-            return [(workflow['id'], workflow['name']) for workflow in data['workflows'] if workflow['state'] != 'disabled']
+            return [(workflow['id'], workflow['name']) for workflow in data['workflows'] if workflow['state'] != 'disabled_manually']
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
         return []
@@ -83,9 +84,13 @@ def update_metrics():
                     last_run['created_at'][:-1], '%Y-%m-%dT%H:%M:%S')
                 updated_at = datetime.strptime(
                     last_run['updated_at'][:-1], '%Y-%m-%dT%H:%M:%S')
-                duration = (updated_at - created_at).total_seconds()
+                if last_run_status == "N/A":
+                   duration = (datetime.now().replace(microsecond=0) - created_at).total_seconds()
+                else:
+                   duration = (updated_at - created_at).total_seconds()
+                #updated_at = updated_at.timestamp()
                 gha_run_status.labels(repo=repo, workflow=workflow_name,
-                                      status=last_run_status, updated_at=updated_at, duration=duration, user=user).inc()
+                                      status=last_run_status, updated_at=updated_at, duration=timedelta(seconds=duration), user=user).set(updated_at.timestamp())
 
 def check_limits():
     headers = {'Authorization': f'token {TOKEN}'}
