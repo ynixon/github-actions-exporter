@@ -85,9 +85,8 @@ def update_metrics():
                 updated_at = datetime.strptime(
                     last_run['updated_at'][:-1], '%Y-%m-%dT%H:%M:%S')
                 if last_run_status == "N/A":
-                   duration = (datetime.now().replace(microsecond=0) - created_at).total_seconds()
-                else:
-                   duration = (updated_at - created_at).total_seconds()
+                   updated_at = datetime.now().replace(microsecond=0)                
+                duration = (updated_at - created_at).total_seconds()
                 #updated_at = updated_at.timestamp()
                 gha_run_status.labels(repo=repo, workflow=workflow_name,
                                       status=last_run_status, updated_at=updated_at, duration=timedelta(seconds=duration), user=user).set(updated_at.timestamp())
