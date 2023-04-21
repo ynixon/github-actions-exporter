@@ -24,7 +24,15 @@ if args.config_file:
 
 # Set up metrics
 gha_run_status = Gauge('github_actions_run_status', 'Status of GitHub Actions workflow run', [
-                       'repo', 'workflow', 'status', 'updated_at', 'duration', 'user'])
+                       'repo', 'workflow', 'status', 'updated_at', 'duration', 'user','branch'])
+
+WORKFLOW_BRANCHES = {
+    'some_repo/some_workflow': 'custom_branch',
+    'another_repo/another_workflow': 'another_custom_branch',
+    'quest-im/foglight-release-management/Fast Release Process': None,  # This workflow will be skipped
+    'quest-im/foglight-operations-tools/clean workflow runs': None,  # This workflow will be skipped
+    'quest-im/foglight-sandbox/Windows 2019 Install latest': None,  # This workflow will be skipped
+}
 
 session = requests.Session()
 session.headers.update({'Authorization': f'token {TOKEN}'})
@@ -62,7 +70,8 @@ def get_workflow_runs(repo: str, workflow_id: str, branch: str, TOKEN: str):
         runs = data['workflow_runs']
         # Sort runs in ascending order by updated_at
         sorted_runs = sorted(runs, key=lambda run: run['updated_at'], reverse=True)
-        return [{'id': run['id'], 'status': run["conclusion"] if run["conclusion"] else "N/A", 'created_at': run['created_at'], 'updated_at': run['updated_at'], 'user': "scheduled" if run['event'] == 'schedule' else run['actor']['login']} for run in sorted_runs]
+        return [{'id': run['id'], 'status': run["conclusion"] if run["conclusion"] else "N/A", 'created_at': run['created_at'], 'updated_at': run['updated_at'], 'user': "scheduled" if run['event'] == 'schedule' else run['actor']['login'], 'branch': run['head_branch']} for run in sorted_runs]
+
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {e}")
@@ -75,7 +84,11 @@ def update_metrics():
         for workflow_id, workflow_name in workflows:
             # if repo == 'quest-im/foglight-demo-sandbox' and (workflow_name == 'Remote action' or workflow_name == 'Greetings'):
             # continue  # Skip these workflows
-            runs = get_workflow_runs(repo, workflow_id, "main", TOKEN)
+            branch = WORKFLOW_BRANCHES.get(f'{repo}/{workflow_name}', 'main')
+            runs = get_workflow_runs(repo, workflow_id, branch, TOKEN)
+            # Skip workflows if the branch is set to None
+            if branch is None:
+                continue
             if runs:
                 last_run = runs[0]
                 last_run_status = last_run['status']
@@ -89,7 +102,7 @@ def update_metrics():
                 duration = (updated_at - created_at).total_seconds()
                 #updated_at = updated_at.timestamp()
                 gha_run_status.labels(repo=repo, workflow=workflow_name,
-                                      status=last_run_status, updated_at=updated_at, duration=timedelta(seconds=duration), user=user).set(updated_at.timestamp())
+                                      status=last_run_status, updated_at=updated_at, duration=timedelta(seconds=duration), user=user, branch=branch).set(updated_at.timestamp())
 
 def check_limits():
     headers = {'Authorization': f'token {TOKEN}'}
