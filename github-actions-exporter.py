@@ -31,7 +31,12 @@ WORKFLOW_BRANCHES = {
     'another_repo/another_workflow': 'another_custom_branch',
     'quest-im/foglight-release-management/Fast Release Process': None,  # This workflow will be skipped
     'quest-im/foglight-operations-tools/clean workflow runs': None,  # This workflow will be skipped
+    'quest-im/foglight-operations-tools/foglight-install': None,  # This workflow will be skipped
     'quest-im/foglight-sandbox/Windows 2019 Install latest': None,  # This workflow will be skipped
+    'quest-im/foglight-sandbox/Check Push': None,  # This workflow will be skipped
+    'quest-im/foglight-sandbox/Check disk size': None,  # This workflow will be skipped
+    'quest-im/foglight-sandbox/test-repo-dispatch': None,  # This workflow will be skipped
+    'quest-im/foglight-operations/Install Foglight on Your Linux VM': None,  # This workflow will be skipped
 }
 
 session = requests.Session()
@@ -138,3 +143,5 @@ if __name__ == '__main__':
             logging.error(f"An error occurred: {e}\n{tb}")
             sys.exit(1)
         time.sleep(60)
+
+
