@@ -1,3 +1,25 @@
-org: '<ORG>'
-token: '<TOKEN>'
+orgs:
+  - name: 'organization1'
+    token: 'your-token'
+    skip_repositories_pattern:
+      - 'skipthisrepoa'
+      - 'skipthisrepob'
+    skip_workflows:
+      - repository1: 'workflow1'
+      - repository1: 'workflow2'
+      - repository2: 'workflow3'
+      - '*': 'Dependabot Updates'
+    workflow_branches:
+      'some_repo/some_workflow': 'custom_branch'
+      'another_repo/another_workflow': 'another_custom_branch'
+      '*/Dependabot Updates': null
+  - name: 'organization2'
+    token: 'your-token'
+    skip_repositories_pattern:
+      - 'skipthisrepo1'
+      - 'skipthisrepo2'
+    skip_workflows:
+      - '*': 'Dependabot Updates'
+    workflow_branches:
+      '*/Dependabot Updates': null
 port: 9171

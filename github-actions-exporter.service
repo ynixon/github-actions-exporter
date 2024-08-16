@@ -8,13 +8,13 @@ Type=simple
 User=github-actions
 Group=github-actions
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/bin/python3 /usr/local/bin/github-actions-exporter.py --config-file=/etc/github-actions/github-actions.yml 
-StandardOutput=/var/log/github-actions/github-actions-exporter.log
-StandardError=/var/log/github-actions/github-actions-exporter.err.log
+ExecStart=/usr/bin/python3 /usr/local/bin/github-actions-exporter.py --config-file=/etc/github-actions/github-actions.yml
+#ExecStart=/usr/bin/python3 /usr/local/bin/github-actions-exporter.py --config-file=/etc/github-actions/github-actions.yml --debug
+StandardOutput=journal
+StandardError=journal
 Restart=always
 RestartSec=10s
 SyslogIdentifier=github-actions-exporter
 
 [Install]
 WantedBy=multi-user.target
-
